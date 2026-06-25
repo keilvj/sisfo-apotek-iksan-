@@ -13,16 +13,26 @@ interface Transaction {
   items: number;
 }
 
-export function ReportsView({ onNavigate, transactions }: { onNavigate: (view: ViewType) => void, transactions: Transaction[] }) {
+export function ReportsView({ onNavigate, transactions, setSelectedTransaction }: { onNavigate: (view: ViewType) => void, transactions: Transaction[], setSelectedTransaction: (t: Transaction) => void }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'thisMonth'>('all');
   
   const now = new Date();
   const thisMonthName = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
 
-  const filteredTransactions = transactions.filter(trx => 
-    trx.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    trx.customer.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTransactions = transactions.filter(trx => {
+    const matchesSearch = trx.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          trx.customer.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (filterType === 'thisMonth') {
+      // Assuming transaction date format is 'DD/MM/YYYY'
+      const [day, month, year] = trx.date.split('/').map(Number);
+      const trxDate = new Date(year, month - 1, day);
+      return matchesSearch && trxDate.getMonth() === now.getMonth() && trxDate.getFullYear() === now.getFullYear();
+    }
+    
+    return matchesSearch;
+  });
 
   const totalRevenue = transactions.filter(t => t.status === 'Selesai').reduce((sum, t) => sum + t.total, 0);
   const completedTransactions = transactions.filter(t => t.status === 'Selesai');
@@ -37,7 +47,9 @@ export function ReportsView({ onNavigate, transactions }: { onNavigate: (view: V
         </div>
         
         <div className="flex gap-4 w-full md:w-auto">
-          <button className="flex-1 md:flex-none border border-outline-variant bg-surface text-on-surface py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-surface-variant hover:border-on-surface transition-all flex items-center justify-center gap-2">
+          <button 
+            onClick={() => setFilterType(filterType === 'thisMonth' ? 'all' : 'thisMonth')}
+            className={`flex-1 md:flex-none border border-outline-variant ${filterType === 'thisMonth' ? 'bg-primary text-on-primary' : 'bg-surface text-on-surface'} py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-surface-variant hover:border-on-surface transition-all flex items-center justify-center gap-2`}>
             <Calendar className="w-4 h-4" />
             Bulan Ini
           </button>
@@ -86,9 +98,11 @@ export function ReportsView({ onNavigate, transactions }: { onNavigate: (view: V
               className="w-full bg-transparent border border-outline-variant pl-12 pr-4 py-3 text-sm focus:outline-none focus:border-primary transition-colors text-on-surface placeholder:text-on-surface-variant/50"
             />
           </div>
-          <button className="border border-outline-variant text-on-surface py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-surface-variant transition-colors flex items-center gap-2">
+          <button 
+            onClick={() => setFilterType(filterType === 'all' ? 'all' : 'all')} 
+            className="border border-outline-variant text-on-surface py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-surface-variant transition-colors flex items-center gap-2">
             <Filter className="w-4 h-4" />
-            Filter
+            Semua
           </button>
         </div>
 
@@ -136,7 +150,7 @@ export function ReportsView({ onNavigate, transactions }: { onNavigate: (view: V
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button 
-                        onClick={() => onNavigate('receipt')}
+                        onClick={() => { setSelectedTransaction(trx); onNavigate('receipt'); }}
                         className="p-2 text-on-surface-variant hover:text-primary transition-colors hover:bg-primary/10 rounded"
                         title="Lihat Struk"
                       >

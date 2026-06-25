@@ -1,4 +1,4 @@
-export type ViewType = 'login' | 'register' | 'products' | 'services' | 'employees' | 'receipt' | 'location' | 'about' | 'reports';
+export type ViewType = 'login' | 'register' | 'products' | 'services' | 'employees' | 'receipt' | 'location' | 'about' | 'reports' | 'dashboard';
 
 export interface Product {
   id: string;
@@ -15,6 +15,12 @@ export interface Product {
 
 export type Cart = { [id: string]: number };
 
+export interface TransactionItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
+
 export interface Transaction {
   id: string;
   date: string;
@@ -24,6 +30,7 @@ export interface Transaction {
   total: number;
   status: 'Selesai' | 'Batal';
   items: number;
+  itemsDetails?: TransactionItem[];
 }
 
 export interface Employee {
@@ -42,4 +49,10 @@ export interface Service {
   price: string;
   status: 'Tersedia' | 'Sesuai Jadwal';
   icon: string;
+}
+
+export interface User {
+  email: string;
+  password: string;
+  phone: string;
 }

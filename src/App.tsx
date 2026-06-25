@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { products as initialProducts, employees as initialEmployees } from './data';
 import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
 import { TopBar } from './components/TopBar';
@@ -16,11 +17,38 @@ import { ReceiptView } from './views/ReceiptView';
 import { LocationView } from './views/LocationView';
 import { AboutView } from './views/AboutView';
 import { ReportsView } from './views/ReportsView';
+import { DashboardView } from './views/DashboardView';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('login');
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<Cart>({});
+  const [products, setProducts] = useState(() => {
+    const saved = localStorage.getItem('products');
+    return saved ? JSON.parse(saved) : initialProducts;
+  });
+  const [employees, setEmployees] = useState(() => {
+    const saved = localStorage.getItem('employees');
+    return saved ? JSON.parse(saved) : initialEmployees;
+  });
+  const [users, setUsers] = useState(() => {
+    const saved = localStorage.getItem('users');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  React.useEffect(() => {
+    localStorage.setItem('products', JSON.stringify(products));
+  }, [products]);
+
+  React.useEffect(() => {
+    localStorage.setItem('employees', JSON.stringify(employees));
+  }, [employees]);
+
+  React.useEffect(() => {
+    localStorage.setItem('users', JSON.stringify(users));
+  }, [users]);
+
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([
     {
       id: 'TRX-20231027-085',
@@ -30,7 +58,11 @@ export default function App() {
       cashier: 'Budi Santoso',
       total: 104618,
       status: 'Selesai',
-      items: 3
+      items: 3,
+      itemsDetails: [
+        { name: 'Paracetamol', quantity: 2, price: 5000 },
+        { name: 'Amoxicillin', quantity: 1, price: 94618 }
+      ]
     },
     {
       id: 'TRX-20231027-084',
@@ -40,7 +72,10 @@ export default function App() {
       cashier: 'Budi Santoso',
       total: 25000,
       status: 'Selesai',
-      items: 1
+      items: 1,
+      itemsDetails: [
+        { name: 'Vitamin C', quantity: 1, price: 25000 }
+      ]
     }
   ]);
 
@@ -51,12 +86,12 @@ export default function App() {
 
   if (isAuthView) {
     return currentView === 'login' 
-      ? <LoginView onNavigate={setCurrentView} /> 
-      : <RegisterView onNavigate={setCurrentView} />;
+      ? <LoginView onNavigate={setCurrentView} users={users} /> 
+      : <RegisterView onNavigate={setCurrentView} setUsers={setUsers} users={users} />;
   }
 
   if (isReceiptView) {
-     return <ReceiptView onNavigate={setCurrentView} cart={cart} setTransactions={setTransactions} setCart={setCart} />;
+     return <ReceiptView onNavigate={setCurrentView} cart={cart} setTransactions={setTransactions} setCart={setCart} selectedTransaction={selectedTransaction} />;
   }
 
   return (
@@ -73,12 +108,13 @@ export default function App() {
           <TopBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
           
           <div className="flex-1 overflow-y-auto">
-            {currentView === 'products' && <ProductsView onNavigate={setCurrentView} cart={cart} setCart={setCart} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
-            {currentView === 'employees' && <EmployeesView />}
+            {currentView === 'dashboard' && <DashboardView />}
+            {currentView === 'products' && <ProductsView onNavigate={setCurrentView} cart={cart} setCart={setCart} searchQuery={searchQuery} setSearchQuery={setSearchQuery} products={products} setProducts={setProducts} />}
+            {currentView === 'employees' && <EmployeesView employees={employees} setEmployees={setEmployees} />}
             {currentView === 'services' && <ServicesView />}
             {currentView === 'location' && <LocationView />}
             {currentView === 'about' && <AboutView />}
-            {currentView === 'reports' && <ReportsView onNavigate={setCurrentView} transactions={transactions} />}
+            {currentView === 'reports' && <ReportsView onNavigate={setCurrentView} transactions={transactions} setSelectedTransaction={setSelectedTransaction} />}
             <Footer />
           </div>
           

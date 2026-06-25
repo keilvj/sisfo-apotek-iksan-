@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, IdCard, HeartHandshake, BarChart, Info, MapPin, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, IdCard, HeartHandshake, BarChart, Info, MapPin, LogOut } from 'lucide-react';
 import { ViewType } from '../types';
 
 interface SidebarProps {
@@ -9,6 +9,7 @@ interface SidebarProps {
 
 export function Sidebar({ currentView, onNavigate }: SidebarProps) {
   const navItems = [
+    { id: 'dashboard' as ViewType, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'employees' as ViewType, label: 'Karyawan', icon: Users },
     { id: 'products' as ViewType, label: 'Katalog', icon: IdCard }, // Map "Katalog" to products for demo
     { id: 'services' as ViewType, label: 'Layanan', icon: HeartHandshake },

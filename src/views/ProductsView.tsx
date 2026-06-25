@@ -1,14 +1,40 @@
-import React from 'react';
-import { products } from '../data';
+import React, { useState } from 'react';
 import { Search, Filter, Plus, ShoppingBag, Minus } from 'lucide-react';
-import { ViewType, Cart } from '../types';
+import { ViewType, Cart, Product } from '../types';
 
-export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearchQuery }: { onNavigate?: (view: ViewType) => void, cart: Cart, setCart: React.Dispatch<React.SetStateAction<Cart>>, searchQuery: string, setSearchQuery: (query: string) => void }) {
+export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearchQuery, products, setProducts }: { onNavigate?: (view: ViewType) => void, cart: Cart, setCart: React.Dispatch<React.SetStateAction<Cart>>, searchQuery: string, setSearchQuery: (query: string) => void, products: Product[], setProducts: React.Dispatch<React.SetStateAction<Product[]>> }) {
+
+  const [selectedCategory, setSelectedCategory] = useState('Semua');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newProduct, setNewProduct] = useState<Omit<Product, 'id' | 'status'>>({
+    name: '',
+    category: '',
+    stock: 0,
+    expiryDate: '',
+    originalPrice: 0,
+    price: 0,
+    image: 'https://via.placeholder.com/150'
+  });
+  
+  const categories = ['Semua', ...Array.from(new Set(products.map(p => p.category)))];
+
+  const handleAddProduct = () => {
+    const status = newProduct.stock === 0 ? 'Kosong' : newProduct.stock < 20 ? 'Menipis' : 'Tersedia';
+    const product: Product = {
+      id: `p${Date.now()}`,
+      ...newProduct,
+      status
+    };
+    setProducts([...products, product]);
+    setShowAddModal(false);
+    setNewProduct({ name: '', category: '', stock: 0, expiryDate: '', originalPrice: 0, price: 0, image: 'https://via.placeholder.com/150' });
+  };
 
   const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.id.toLowerCase().includes(searchQuery.toLowerCase())
+    (p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+     p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+     p.id.toLowerCase().includes(searchQuery.toLowerCase())) &&
+    (selectedCategory === 'Semua' || p.category === selectedCategory)
   );
 
   const handleAddToCart = (productId: string) => {
@@ -39,11 +65,68 @@ export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearch
           <h2 className="font-headline text-4xl italic tracking-tight text-on-surface mb-2">Katalog Natura.</h2>
           <p className="text-[10px] text-on-surface-variant uppercase tracking-[2px]">Edisi 2024 / Inventaris Terkurasi</p>
         </div>
-        <button className="bg-primary text-on-primary text-[10px] uppercase tracking-[2px] font-bold px-6 py-3 rounded-none hover:bg-on-surface-variant transition-colors flex items-center gap-2">
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="bg-primary text-on-primary text-[10px] uppercase tracking-[2px] font-bold px-6 py-3 rounded-none hover:bg-on-surface-variant transition-colors flex items-center gap-2"
+        >
           <Plus className="w-4 h-4" />
           Tambah Entri
         </button>
       </div>
+
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-surface p-8 rounded-lg shadow-xl w-full max-w-md">
+            <h3 className="font-headline text-xl mb-4">Tambah Produk Baru</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-on-surface mb-1">Nama Produk</label>
+                <input type="text" placeholder="Contoh: Paracetamol 500mg" className="w-full p-2 border border-outline-variant rounded" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-on-surface mb-1">Kategori</label>
+                <input type="text" placeholder="Contoh: Obat Bebas" className="w-full p-2 border border-outline-variant rounded" value={newProduct.category} onChange={e => setNewProduct({...newProduct, category: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-on-surface mb-1">Stok Awal</label>
+                <input type="number" placeholder="Contoh: 100" className="w-full p-2 border border-outline-variant rounded" value={newProduct.stock} onChange={e => setNewProduct({...newProduct, stock: parseInt(e.target.value)})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-on-surface mb-1">Tanggal Kadaluwarsa</label>
+                <input type="date" className="w-full p-2 border border-outline-variant rounded" value={newProduct.expiryDate} onChange={e => setNewProduct({...newProduct, expiryDate: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-on-surface mb-1">Harga Modal (Rp)</label>
+                <input type="number" placeholder="Contoh: 5000" className="w-full p-2 border border-outline-variant rounded" value={newProduct.originalPrice} onChange={e => setNewProduct({...newProduct, originalPrice: parseInt(e.target.value)})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-on-surface mb-1">Harga Jual (Rp)</label>
+                <input type="number" placeholder="Contoh: 7500" className="w-full p-2 border border-outline-variant rounded" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: parseInt(e.target.value)})} />
+              </div>
+              <label className="block text-xs font-bold text-on-surface mb-2">Foto Produk</label>
+              <input 
+                type="file" 
+                accept="image/*" 
+                className="w-full p-2 border border-outline-variant rounded" 
+                onChange={e => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setNewProduct({...newProduct, image: reader.result as string});
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }} 
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 text-on-surface">Tutup</button>
+              <button onClick={handleAddProduct} className="bg-primary text-on-primary px-4 py-2 rounded">Tambah</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row items-center gap-4 mb-10">
         <div className="flex-1 flex items-center border-b border-outline-variant py-2 focus-within:border-primary transition-all w-full">
@@ -56,10 +139,15 @@ export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearch
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <button className="px-6 py-3 border border-outline-variant rounded-none text-on-surface text-[10px] uppercase tracking-[2px] font-bold flex items-center gap-2 hover:bg-surface-variant transition-colors w-full md:w-auto justify-center">
-          <Filter className="w-4 h-4" />
-          Saring
-        </button>
+        <select 
+          className="px-6 py-3 border border-outline-variant rounded-none bg-surface text-on-surface text-[10px] uppercase tracking-[2px] font-bold flex items-center gap-2 hover:bg-surface-variant transition-colors w-full md:w-auto"
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+        >
+          {categories.map(cat => (
+            <option key={cat} value={cat}>{cat}</option>
+          ))}
+        </select>
       </div>
 
       {filteredProducts.length === 0 ? (
@@ -84,8 +172,8 @@ export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearch
                 />
                 <div className={`absolute top-4 right-4 px-3 py-1 rounded-none border ${
                   product.status === 'Tersedia' ? 'bg-surface text-on-surface border-outline-variant' : 
-                  product.status === 'Menipis' ? 'bg-surface-variant text-on-surface border-outline' : 
-                  'bg-background text-outline border-outline-variant'
+                  product.status === 'Menipis' ? 'bg-amber-100 text-amber-900 border-amber-300' : 
+                  'bg-red-100 text-red-900 border-red-300'
                 }`}>
                   <span className="text-[9px] font-bold uppercase tracking-[2px]">{product.status}</span>
                 </div>

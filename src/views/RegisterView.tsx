@@ -1,14 +1,27 @@
 import React, { useState } from 'react';
-import { ViewType } from '../types';
+import { ViewType, User } from '../types';
 import { Eye, EyeOff } from 'lucide-react';
 import pharmacyBackground from '../assets/images/pharmacy_background_1782358561112.jpg';
 
-export function RegisterView({ onNavigate }: { onNavigate: (view: ViewType) => void }) {
+export function RegisterView({ onNavigate, setUsers, users }: { onNavigate: (view: ViewType) => void, setUsers: React.Dispatch<React.SetStateAction<User[]>>, users: User[] }) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      alert('Password tidak cocok');
+      return;
+    }
+    if (users.find(u => u.email === email)) {
+      alert('Email sudah terdaftar');
+      return;
+    }
+    setUsers([...users, { email, phone, password }]);
     onNavigate('login');
   };
 
@@ -30,19 +43,19 @@ export function RegisterView({ onNavigate }: { onNavigate: (view: ViewType) => v
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-on-surface uppercase tracking-[2px]" htmlFor="telepon">Nomor Telepon</label>
-              <input className="w-full py-3 bg-transparent border-b border-outline-variant text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 transition-colors rounded-none" id="telepon" placeholder="08123456789" required type="tel"/>
+              <input className="w-full py-3 bg-transparent border-b border-outline-variant text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 transition-colors rounded-none" id="telepon" placeholder="08123456789" required type="tel" value={phone} onChange={e => setPhone(e.target.value)}/>
             </div>
 
             <div className="flex flex-col gap-2">
               <label className="text-[10px] font-bold text-on-surface uppercase tracking-[2px]" htmlFor="email">Email Pengelola</label>
-              <input className="w-full py-3 bg-transparent border-b border-outline-variant text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 transition-colors rounded-none" id="email" placeholder="admin@apoteknatura.com" required type="email"/>
+              <input className="w-full py-3 bg-transparent border-b border-outline-variant text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 transition-colors rounded-none" id="email" placeholder="admin@apoteknatura.com" required type="email" value={email} onChange={e => setEmail(e.target.value)}/>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="flex flex-col gap-2 relative">
               <label className="text-[10px] font-bold text-on-surface uppercase tracking-[2px]" htmlFor="password">Password</label>
-              <input className="w-full py-3 pr-10 bg-transparent border-b border-outline-variant text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 transition-colors rounded-none" id="password" placeholder="••••••••" required type={showPassword ? "text" : "password"}/>
+              <input className="w-full py-3 pr-10 bg-transparent border-b border-outline-variant text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 transition-colors rounded-none" id="password" placeholder="••••••••" required type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}/>
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-0 bottom-3 text-outline hover:text-on-surface focus:outline-none">
                 {showPassword ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
               </button>
@@ -50,7 +63,7 @@ export function RegisterView({ onNavigate }: { onNavigate: (view: ViewType) => v
 
             <div className="flex flex-col gap-2 relative">
               <label className="text-[10px] font-bold text-on-surface uppercase tracking-[2px]" htmlFor="konfirmasi_password">Konfirmasi Password</label>
-              <input className="w-full py-3 pr-10 bg-transparent border-b border-outline-variant text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 transition-colors rounded-none" id="konfirmasi_password" placeholder="••••••••" required type={showConfirmPassword ? "text" : "password"}/>
+              <input className="w-full py-3 pr-10 bg-transparent border-b border-outline-variant text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 transition-colors rounded-none" id="konfirmasi_password" placeholder="••••••••" required type={showConfirmPassword ? "text" : "password"} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}/>
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-0 bottom-3 text-outline hover:text-on-surface focus:outline-none">
                 {showConfirmPassword ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
               </button>

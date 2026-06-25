@@ -4,39 +4,45 @@ import { products } from '../data';
 import { Printer, Check, Tag } from 'lucide-react';
 import pharmacyBackground from '../assets/images/pharmacy_background_1782358561112.jpg';
 
-export function ReceiptView({ onNavigate, cart, setTransactions, setCart }: { onNavigate: (view: ViewType) => void, cart: Cart, setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>, setCart: React.Dispatch<React.SetStateAction<Cart>> }) {
+export function ReceiptView({ onNavigate, cart, setTransactions, setCart, selectedTransaction }: { 
+  onNavigate: (view: ViewType) => void, 
+  cart: Cart, 
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>, 
+  setCart: React.Dispatch<React.SetStateAction<Cart>>,
+  selectedTransaction?: Transaction | null
+}) {
   const [selectedDiscount, setSelectedDiscount] = useState<number>(0);
-  const [customerName, setCustomerName] = useState<string>('');
+  const [customerName, setCustomerName] = useState<string>(selectedTransaction ? selectedTransaction.customer : '');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [paymentMethod, setPaymentMethod] = useState<string>('QRIS');
+  
+  const isViewing = !!selectedTransaction;
 
   const onComplete = () => {
-    const newTransaction: Transaction = {
-      id: `TRX-${Date.now()}`,
-      date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
-      time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-      customer: customerName || 'Umum',
-      cashier: 'Kasir Utama',
-      total: Math.round(total),
-      status: 'Selesai',
-      items: cartItems.reduce((sum, item) => sum + item!.quantity, 0),
-    };
-    setTransactions(prev => [...prev, newTransaction]);
-    setCart({});
+    if (!isViewing) {
+      const newTransaction: Transaction = {
+        id: `TRX-${Date.now()}`,
+        date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+        customer: customerName || 'Umum',
+        cashier: 'Kasir Utama',
+        total: Math.round(total),
+        status: 'Selesai',
+        items: cartItems.reduce((sum, item) => sum + item!.quantity, 0),
+        itemsDetails: cartItems.map(item => ({ name: item!.name, quantity: item!.quantity, price: item!.price }))
+      };
+      setTransactions(prev => [...prev, newTransaction]);
+      setCart({});
+    }
     onNavigate('products');
   };
 
-  React.useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const cartItems = Object.entries(cart).map(([id, quantity]) => {
-    const product = products.find(p => p.id === id);
-    return { ...product, quantity };
-  }).filter(item => item !== undefined);
+  const cartItems = isViewing 
+    ? (selectedTransaction?.itemsDetails || []).map((item, index) => ({ id: index.toString(), name: item.name, quantity: item.quantity, price: item.price }))
+    : Object.entries(cart).map(([id, quantity]) => {
+        const product = products.find(p => p.id === id);
+        return { ...product, quantity };
+      }).filter(item => item !== undefined);
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item!.price * item!.quantity), 0);
   const discountAmount = subtotal * (selectedDiscount / 100);
@@ -60,17 +66,20 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart }: { on
         <div className="px-10 py-6 grid grid-cols-2 gap-4 border-b border-outline-variant text-[10px] uppercase tracking-[1px]">
           <div>
             <span className="font-bold text-on-surface-variant block mb-1">No. Rekam / Struk</span>
-            <span className="font-mono text-on-surface">TRX-20231027-084</span>
+            <span className="font-mono text-on-surface">{isViewing ? selectedTransaction?.id : 'TRX-20231027-084'}</span>
           </div>
           <div className="text-right">
             <span className="font-bold text-on-surface-variant block mb-1">Waktu Transaksi</span>
             <span className="font-mono text-on-surface">
-              {currentTime.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}, {currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+              {isViewing 
+                ? `${selectedTransaction?.date}, ${selectedTransaction?.time}`
+                : `${currentTime.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}, ${currentTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}`
+              }
             </span>
           </div>
           <div>
             <span className="font-bold text-on-surface-variant block mb-1">Kasir</span>
-            <span className="text-on-surface">Budi Santoso</span>
+            <span className="text-on-surface">{isViewing ? selectedTransaction?.cashier : 'Budi Santoso'}</span>
           </div>
           <div className="text-right">
             <label htmlFor="customer-name" className="font-bold text-on-surface-variant block mb-1">Pelanggan</label>
@@ -78,6 +87,7 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart }: { on
               id="customer-name"
               type="text" 
               value={customerName}
+              disabled={isViewing}
               onChange={(e) => setCustomerName(e.target.value)}
               className="bg-transparent text-on-surface text-right w-full outline-none border-b border-dashed border-outline-variant focus:border-primary focus:border-solid placeholder:text-on-surface-variant/40"
               placeholder="Nama pelanggan..."
@@ -104,69 +114,73 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart }: { on
           </div>
         </div>
 
-        <div className="px-10 py-8 flex flex-col gap-4 border-b border-outline-variant">
-          <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px]">Pilih Metode Pembayaran</span>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button 
-              onClick={() => setPaymentMethod('Tunai')}
-              className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${paymentMethod === 'Tunai' ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
-            >
-              Tunai
-            </button>
-            <button 
-              onClick={() => setPaymentMethod('Debit/Kredit')}
-              className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${paymentMethod === 'Debit/Kredit' ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
-            >
-              Debit/Kredit
-            </button>
-            <button 
-              onClick={() => setPaymentMethod('QRIS')}
-              className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${paymentMethod === 'QRIS' ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
-            >
-              QRIS
-            </button>
-          </div>
-        </div>
+        {!isViewing && (
+          <>
+            <div className="px-10 py-8 flex flex-col gap-4 border-b border-outline-variant">
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px]">Pilih Metode Pembayaran</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button 
+                  onClick={() => setPaymentMethod('Tunai')}
+                  className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${paymentMethod === 'Tunai' ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
+                >
+                  Tunai
+                </button>
+                <button 
+                  onClick={() => setPaymentMethod('Debit/Kredit')}
+                  className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${paymentMethod === 'Debit/Kredit' ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
+                >
+                  Debit/Kredit
+                </button>
+                <button 
+                  onClick={() => setPaymentMethod('QRIS')}
+                  className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${paymentMethod === 'QRIS' ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
+                >
+                  QRIS
+                </button>
+              </div>
+            </div>
 
-        <div className="px-10 py-8 flex flex-col gap-4 border-b border-outline-variant">
-          <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px]">Pilih Diskon</span>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button 
-              onClick={() => setSelectedDiscount(0)}
-              className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${selectedDiscount === 0 ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
-            >
-              Tanpa Diskon
-            </button>
-            <button 
-              onClick={() => setSelectedDiscount(5)}
-              className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${selectedDiscount === 5 ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
-            >
-              <Tag className="w-3 h-3" />
-              Member (5%)
-            </button>
-            <button 
-              onClick={() => setSelectedDiscount(10)}
-              className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${selectedDiscount === 10 ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
-            >
-              <Tag className="w-3 h-3" />
-              Promo Spesial (10%)
-            </button>
-            <button 
-              onClick={() => setSelectedDiscount(15)}
-              className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${selectedDiscount === 15 ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
-            >
-              <Tag className="w-3 h-3" />
-              Flash Sale (15%)
-            </button>
-            <button 
-              onClick={() => setSelectedDiscount(20)}
-              className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${selectedDiscount === 20 ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
-            >
-              <Tag className="w-3 h-3" />
-              Voucher (20%)
-            </button>
-          </div>
-        </div>
+            <div className="px-10 py-8 flex flex-col gap-4 border-b border-outline-variant">
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px]">Pilih Diskon</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button 
+                  onClick={() => setSelectedDiscount(0)}
+                  className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${selectedDiscount === 0 ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
+                >
+                  Tanpa Diskon
+                </button>
+                <button 
+                  onClick={() => setSelectedDiscount(5)}
+                  className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${selectedDiscount === 5 ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
+                >
+                  <Tag className="w-3 h-3" />
+                  Member (5%)
+                </button>
+                <button 
+                  onClick={() => setSelectedDiscount(10)}
+                  className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${selectedDiscount === 10 ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
+                >
+                  <Tag className="w-3 h-3" />
+                  Promo Spesial (10%)
+                </button>
+                <button 
+                  onClick={() => setSelectedDiscount(15)}
+                  className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${selectedDiscount === 15 ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
+                >
+                  <Tag className="w-3 h-3" />
+                  Flash Sale (15%)
+                </button>
+                <button 
+                  onClick={() => setSelectedDiscount(20)}
+                  className={`py-3 px-4 text-[10px] uppercase tracking-[1px] font-bold border transition-colors flex items-center justify-center gap-2 ${selectedDiscount === 20 ? 'bg-on-surface text-surface border-on-surface' : 'bg-transparent text-on-surface-variant border-outline-variant hover:border-on-surface'}`}
+                >
+                  <Tag className="w-3 h-3" />
+                  Voucher (20%)
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         <div className="px-10 py-8 flex flex-col gap-3 border-b border-outline-variant bg-surface-variant/20">
           <div className="flex justify-between items-center text-[11px] uppercase tracking-[1px]">
