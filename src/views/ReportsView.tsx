@@ -13,81 +13,11 @@ interface Transaction {
   items: number;
 }
 
-export function ReportsView({ onNavigate }: { onNavigate: (view: ViewType) => void }) {
+export function ReportsView({ onNavigate, transactions }: { onNavigate: (view: ViewType) => void, transactions: Transaction[] }) {
   const [searchQuery, setSearchQuery] = useState('');
-
+  
   const now = new Date();
-  const todayDate = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-  const yesterdayDate = new Date(now.getTime() - 86400000).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
   const thisMonthName = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-
-  const getTimeMinusMinutes = (minutes: number) => {
-    const d = new Date(now.getTime() - minutes * 60000);
-    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  const transactions: Transaction[] = [
-    {
-      id: `TRX-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-085`,
-      date: todayDate,
-      time: getTimeMinusMinutes(5),
-      customer: 'Anita (Member)',
-      cashier: 'Budi Santoso',
-      total: 104618,
-      status: 'Selesai',
-      items: 3
-    },
-    {
-      id: `TRX-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-084`,
-      date: todayDate,
-      time: getTimeMinusMinutes(20),
-      customer: 'Umum',
-      cashier: 'Budi Santoso',
-      total: 25000,
-      status: 'Selesai',
-      items: 1
-    },
-    {
-      id: `TRX-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-083`,
-      date: todayDate,
-      time: getTimeMinusMinutes(65),
-      customer: 'Bapak Rudi',
-      cashier: 'Siti Aminah',
-      total: 150000,
-      status: 'Selesai',
-      items: 4
-    },
-    {
-      id: `TRX-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-082`,
-      date: todayDate,
-      time: getTimeMinusMinutes(150),
-      customer: 'Ibu Ratna',
-      cashier: 'Siti Aminah',
-      total: 75000,
-      status: 'Batal',
-      items: 2
-    },
-    {
-      id: `TRX-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate() - 1).padStart(2, '0')}-102`,
-      date: yesterdayDate,
-      time: '19:30',
-      customer: 'Umum',
-      cashier: 'Budi Santoso',
-      total: 45000,
-      status: 'Selesai',
-      items: 2
-    },
-    {
-      id: `TRX-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate() - 1).padStart(2, '0')}-101`,
-      date: yesterdayDate,
-      time: '18:10',
-      customer: 'Andi (Member)',
-      cashier: 'Budi Santoso',
-      total: 320000,
-      status: 'Selesai',
-      items: 5
-    }
-  ];
 
   const filteredTransactions = transactions.filter(trx => 
     trx.id.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -95,6 +25,8 @@ export function ReportsView({ onNavigate }: { onNavigate: (view: ViewType) => vo
   );
 
   const totalRevenue = transactions.filter(t => t.status === 'Selesai').reduce((sum, t) => sum + t.total, 0);
+  const completedTransactions = transactions.filter(t => t.status === 'Selesai');
+  const averageTransaction = completedTransactions.length > 0 ? Math.round(totalRevenue / completedTransactions.length) : 0;
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
@@ -105,11 +37,11 @@ export function ReportsView({ onNavigate }: { onNavigate: (view: ViewType) => vo
         </div>
         
         <div className="flex gap-4 w-full md:w-auto">
-          <button className="flex-1 md:flex-none border border-outline-variant bg-surface text-on-surface py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+          <button className="flex-1 md:flex-none border border-outline-variant bg-surface text-on-surface py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-surface-variant hover:border-on-surface transition-all flex items-center justify-center gap-2">
             <Calendar className="w-4 h-4" />
             Bulan Ini
           </button>
-          <button className="flex-1 md:flex-none bg-primary text-on-primary py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-on-surface-variant transition-colors flex items-center justify-center gap-2">
+          <button className="flex-1 md:flex-none bg-primary text-on-primary py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-on-surface-variant transition-all flex items-center justify-center gap-2">
             <Download className="w-4 h-4" />
             Unduh PDF
           </button>
@@ -128,7 +60,7 @@ export function ReportsView({ onNavigate }: { onNavigate: (view: ViewType) => vo
         <div className="bg-surface/80 backdrop-blur-sm border border-outline-variant p-6 flex flex-col justify-between min-h-[140px]">
           <span className="text-[10px] uppercase tracking-[2px] font-bold text-on-surface-variant">Total Transaksi Selesai</span>
           <div>
-            <span className="font-headline text-4xl font-normal text-on-surface block">{transactions.filter(t => t.status === 'Selesai').length}</span>
+            <span className="font-headline text-4xl font-normal text-on-surface block">{completedTransactions.length}</span>
             <span className="text-xs text-on-surface-variant mt-2 flex items-center gap-1">{thisMonthName}</span>
           </div>
         </div>
@@ -136,7 +68,7 @@ export function ReportsView({ onNavigate }: { onNavigate: (view: ViewType) => vo
         <div className="bg-surface/80 backdrop-blur-sm border border-outline-variant p-6 flex flex-col justify-between min-h-[140px]">
           <span className="text-[10px] uppercase tracking-[2px] font-bold text-on-surface-variant">Rata-rata Transaksi</span>
           <div>
-            <span className="font-headline text-4xl font-normal text-on-surface block">Rp {Math.round(totalRevenue / transactions.filter(t => t.status === 'Selesai').length).toLocaleString('id-ID')}</span>
+            <span className="font-headline text-4xl font-normal text-on-surface block">Rp {averageTransaction.toLocaleString('id-ID')}</span>
             <span className="text-xs text-on-surface-variant mt-2 flex items-center gap-1">Per transaksi valid</span>
           </div>
         </div>

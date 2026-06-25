@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
 import { TopBar } from './components/TopBar';
-import { ViewType } from './types';
+import { Footer } from './components/Footer';
+import { ViewType, Cart, Transaction } from './types';
 import pharmacyBackground from './assets/images/pharmacy_background_1782358561112.jpg';
 
 // Placeholder imports for views
@@ -18,6 +19,30 @@ import { ReportsView } from './views/ReportsView';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewType>('login');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [cart, setCart] = useState<Cart>({});
+  const [transactions, setTransactions] = useState<Transaction[]>([
+    {
+      id: 'TRX-20231027-085',
+      date: '27 Okt 2023',
+      time: '10:00',
+      customer: 'Anita (Member)',
+      cashier: 'Budi Santoso',
+      total: 104618,
+      status: 'Selesai',
+      items: 3
+    },
+    {
+      id: 'TRX-20231027-084',
+      date: '27 Okt 2023',
+      time: '09:40',
+      customer: 'Umum',
+      cashier: 'Budi Santoso',
+      total: 25000,
+      status: 'Selesai',
+      items: 1
+    }
+  ]);
 
   // Views that don't have the main layout (sidebar, topbar, bottomnav)
   const isAuthView = currentView === 'login' || currentView === 'register';
@@ -31,7 +56,7 @@ export default function App() {
   }
 
   if (isReceiptView) {
-     return <ReceiptView onNavigate={setCurrentView} />;
+     return <ReceiptView onNavigate={setCurrentView} cart={cart} setTransactions={setTransactions} setCart={setCart} />;
   }
 
   return (
@@ -45,15 +70,16 @@ export default function App() {
         <Sidebar currentView={currentView} onNavigate={setCurrentView} />
         
         <main className="flex-1 flex flex-col w-full md:pl-72 h-screen bg-surface/60 backdrop-blur-md">
-          <TopBar />
+          <TopBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
           
           <div className="flex-1 overflow-y-auto">
-            {currentView === 'products' && <ProductsView onNavigate={setCurrentView} />}
+            {currentView === 'products' && <ProductsView onNavigate={setCurrentView} cart={cart} setCart={setCart} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />}
             {currentView === 'employees' && <EmployeesView />}
             {currentView === 'services' && <ServicesView />}
             {currentView === 'location' && <LocationView />}
             {currentView === 'about' && <AboutView />}
-            {currentView === 'reports' && <ReportsView onNavigate={setCurrentView} />}
+            {currentView === 'reports' && <ReportsView onNavigate={setCurrentView} transactions={transactions} />}
+            <Footer />
           </div>
           
           {/* Spacing for mobile bottom nav */}

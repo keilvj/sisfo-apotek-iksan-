@@ -110,7 +110,6 @@
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-outline;
 }
-
 /* Receipt edge effect */
 .receipt-edge {
   mask-image: radial-gradient(circle at 4px 100%, transparent 4px, black 4.5px);
@@ -130,4 +129,18 @@
   background-size: 8px 1px;
   background-repeat: repeat-x;
   height: 1px;
+}
+
+@media print {
+  button {
+    display: none !important;
+  }
+  body {
+    background-image: none !important;
+    background-color: white !important;
+  }
+  main {
+    box-shadow: none !important;
+    border: none !important;
+  }
 }

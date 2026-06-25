@@ -5,11 +5,25 @@ export interface Product {
   name: string;
   category: string;
   stock: number;
+  expiryDate: string;
   originalPrice: number;
   price: number;
   discount?: number;
   status: 'Tersedia' | 'Menipis' | 'Kosong';
   image: string;
+}
+
+export type Cart = { [id: string]: number };
+
+export interface Transaction {
+  id: string;
+  date: string;
+  time: string;
+  customer: string;
+  cashier: string;
+  total: number;
+  status: 'Selesai' | 'Batal';
+  items: number;
 }
 
 export interface Employee {

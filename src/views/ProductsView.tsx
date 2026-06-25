@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { products } from '../data';
 import { Search, Filter, Plus, ShoppingBag, Minus } from 'lucide-react';
-import { ViewType } from '../types';
+import { ViewType, Cart } from '../types';
 
-export function ProductsView({ onNavigate }: { onNavigate?: (view: ViewType) => void }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [cart, setCart] = useState<{ [id: string]: number }>({});
+export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearchQuery }: { onNavigate?: (view: ViewType) => void, cart: Cart, setCart: React.Dispatch<React.SetStateAction<Cart>>, searchQuery: string, setSearchQuery: (query: string) => void }) {
 
   const filteredProducts = products.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -71,9 +69,9 @@ export function ProductsView({ onNavigate }: { onNavigate?: (view: ViewType) => 
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-surface/80 backdrop-blur-sm border border-outline-variant rounded-none flex flex-col relative group">
+            <div key={product.id} className="bg-surface/80 backdrop-blur-sm border border-outline-variant rounded-none flex flex-col relative group hover:shadow-lg hover:border-on-surface transition-all duration-300">
               {product.discount && (
-                <div className="absolute top-4 left-4 z-10 bg-primary text-on-primary px-3 py-1 rounded-none text-[10px] uppercase tracking-[1px] font-bold shadow-none">
+                <div className="absolute top-4 left-4 z-10 bg-primary text-on-primary px-3 py-1 rounded-none text-[10px] uppercase tracking-[1px] font-bold shadow-none transition-transform group-hover:scale-105">
                   DISKON {product.discount}%
                 </div>
               )}
@@ -105,6 +103,7 @@ export function ProductsView({ onNavigate }: { onNavigate?: (view: ViewType) => 
                   <div className="flex justify-between items-end border-t border-outline-variant pt-4">
                     <div>
                       <p className="text-[9px] uppercase tracking-[2px] font-bold text-on-surface-variant mb-1">Stok: {product.stock}</p>
+                      <p className="text-[9px] uppercase tracking-[2px] font-bold text-on-surface-variant mb-1">Kadaluwarsa: {new Date(product.expiryDate).toLocaleDateString('id-ID')}</p>
                       <div className="flex items-center gap-2">
                         {product.originalPrice !== product.price && (
                            <p className="text-[10px] text-outline-variant line-through">Rp {product.originalPrice.toLocaleString('id-ID')}</p>

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { services } from '../data';
-import { ArrowRight, Droplet, Headset, Activity, Truck, Home } from 'lucide-react';
+import { ArrowRight, Droplet, Headset, Activity, Truck, Home, X } from 'lucide-react';
+import { Service } from '../types';
 
 const iconMap: Record<string, React.ElementType> = {
   droplet: Droplet,
@@ -11,6 +12,8 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export function ServicesView() {
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">
       <div className="mb-6">
@@ -41,7 +44,10 @@ export function ServicesView() {
               
               <div className="flex items-end justify-between mt-auto pt-4 border-t border-surface-container-high">
                 <p className="font-headline text-lg font-bold text-primary">{service.price}</p>
-                <button className="text-primary hover:text-primary-container text-xs font-semibold flex items-center gap-1">
+                <button 
+                  onClick={() => setSelectedService(service)}
+                  className="text-primary hover:text-primary-container text-xs font-semibold flex items-center gap-1"
+                >
                   Detail <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -49,6 +55,21 @@ export function ServicesView() {
           );
         })}
       </div>
+
+      {selectedService && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <div className="bg-surface p-6 rounded-2xl max-w-md w-full border border-outline-variant shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-headline text-xl font-bold text-on-surface">{selectedService.name}</h3>
+              <button onClick={() => setSelectedService(null)} className="text-on-surface-variant hover:text-on-surface">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <p className="text-sm text-on-surface-variant mb-6">{selectedService.description}</p>
+            <p className="font-headline text-2xl font-bold text-primary">{selectedService.price}</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

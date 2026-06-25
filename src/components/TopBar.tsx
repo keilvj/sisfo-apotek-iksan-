@@ -1,7 +1,7 @@
 import React from 'react';
 import { Menu, Search } from 'lucide-react';
 
-export function TopBar() {
+export function TopBar({ searchQuery, setSearchQuery }: { searchQuery: string, setSearchQuery: (query: string) => void }) {
   return (
     <header className="bg-surface border-b border-outline-variant flex justify-between items-center w-full px-4 md:px-8 h-16 shrink-0 z-40 sticky top-0">
       <div className="flex items-center gap-3">
@@ -18,6 +18,8 @@ export function TopBar() {
             className="bg-transparent border-none outline-none text-[11px] uppercase tracking-[1px] font-bold w-full placeholder:text-on-surface-variant/40 text-on-surface py-2" 
             placeholder="PENCARIAN..." 
             type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <button aria-label="Search" className="text-primary p-2 rounded-none hover:bg-surface-variant transition-colors md:hidden">

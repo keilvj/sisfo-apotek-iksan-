@@ -64,9 +64,9 @@ export function LocationView() {
                 <div>
                   <span className="text-[10px] uppercase tracking-[2px] font-bold text-on-surface-variant block mb-1">Alamat</span>
                   <p className="text-sm text-on-surface leading-relaxed">
-                    Jl. Jend. Sudirman No. 12<br/>
+                    Jl. Penghibur No. 10 (Pantai Losari)<br/>
                     Makassar, Sulawesi Selatan<br/>
-                    Indonesia 90114
+                    Indonesia 90111
                   </p>
                 </div>
               </div>
