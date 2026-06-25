@@ -1,0 +1,133 @@
+@import url("https://fonts.googleapis.com/css2?family=Helvetica+Neue:wght@400;500;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #121212;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #8b8175;
+  --color-on-primary-container: #ffffff;
+  --color-secondary: #8b8175;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #eae8e4;
+  --color-on-secondary-container: #121212;
+  --color-tertiary: #121212;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #f0f0f0;
+  --color-on-tertiary-container: #121212;
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  --color-background: #f9f8f6;
+  --color-on-background: #121212;
+  --color-surface: #ffffff;
+  --color-on-surface: #121212;
+  --color-surface-variant: #f0f0f0;
+  --color-on-surface-variant: rgba(0, 0, 0, 0.6);
+  --color-outline: rgba(0, 0, 0, 0.3);
+  --color-outline-variant: rgba(0, 0, 0, 0.06);
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f9f8f6;
+  --color-surface-container: #f0f0f0;
+  --color-surface-container-high: #eae8e4;
+  --color-surface-container-highest: #e0e0e0;
+
+  --font-sans: "Helvetica Neue", Arial, sans-serif;
+  --font-headline: "Playfair Display", "Georgia", serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-on-background font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-headline {
+    @apply font-headline font-normal;
+    letter-spacing: -0.5px;
+  }
+
+  .rounded-lg,
+  .rounded-xl,
+  .rounded,
+  .rounded-md {
+    border-radius: 0 !important;
+  }
+
+  .shadow-sm,
+  .shadow,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl {
+    box-shadow: none !important;
+  }
+
+  /* Thin elegant borders */
+  .border,
+  .border-b,
+  .border-t,
+  .border-l,
+  .border-r {
+    border-color: rgba(0, 0, 0, 0.06);
+  }
+
+  /* Editorial labels */
+  label,
+  .text-xs.font-semibold {
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    font-weight: 700 !important;
+    opacity: 0.8;
+  }
+
+  /* Editorial Buttons */
+  button {
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    font-weight: 700 !important;
+  }
+}
+
+/* Custom scrollbar for webkit */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-outline-variant;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-outline;
+}
+
+/* Receipt edge effect */
+.receipt-edge {
+  mask-image: radial-gradient(circle at 4px 100%, transparent 4px, black 4.5px);
+  mask-size: 16px 10px;
+  mask-repeat: repeat-x;
+  mask-position: bottom;
+  padding-bottom: 12px;
+}
+
+.dashed-divider {
+  background-image: linear-gradient(
+    to right,
+    theme("colors.outline-variant") 50%,
+    rgba(255, 255, 255, 0) 0%
+  );
+  background-position: bottom;
+  background-size: 8px 1px;
+  background-repeat: repeat-x;
+  height: 1px;
+}
