@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { CheckCircle2, Info, XCircle } from 'lucide-react';
 import { products as initialProducts, employees as initialEmployees } from './data';
 import { Sidebar } from './components/Sidebar';
 import { BottomNav } from './components/BottomNav';
@@ -35,6 +36,13 @@ export default function App() {
     const saved = localStorage.getItem('users');
     return saved ? JSON.parse(saved) : [];
   });
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   React.useEffect(() => {
     localStorage.setItem('products', JSON.stringify(products));
@@ -79,6 +87,16 @@ export default function App() {
     }
   ]);
 
+  const handleNavigate = (view: ViewType) => {
+    if (view === 'login') {
+      setCurrentUser(null);
+    }
+    if (view === 'dashboard' || view === 'products' || view === 'employees' || view === 'services' || view === 'location' || view === 'reports') {
+      setSelectedTransaction(null);
+    }
+    setCurrentView(view);
+  };
+
   // Views that don't have the main layout (sidebar, topbar, bottomnav)
   const isAuthView = currentView === 'login' || currentView === 'register';
   // Receipt view also suppresses navigation as per the prompt instructions
@@ -86,12 +104,12 @@ export default function App() {
 
   if (isAuthView) {
     return currentView === 'login' 
-      ? <LoginView onNavigate={setCurrentView} users={users} /> 
-      : <RegisterView onNavigate={setCurrentView} setUsers={setUsers} users={users} />;
+      ? <LoginView onNavigate={handleNavigate} users={users} setCurrentUser={setCurrentUser} /> 
+      : <RegisterView onNavigate={handleNavigate} setUsers={setUsers} users={users} />;
   }
 
   if (isReceiptView) {
-     return <ReceiptView onNavigate={setCurrentView} cart={cart} setTransactions={setTransactions} setCart={setCart} selectedTransaction={selectedTransaction} />;
+     return <ReceiptView onNavigate={handleNavigate} cart={cart} setTransactions={setTransactions} setCart={setCart} selectedTransaction={selectedTransaction} currentUser={currentUser} products={products} setProducts={setProducts} showToast={showToast} />;
   }
 
   return (
@@ -102,19 +120,19 @@ export default function App() {
       <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px] z-0 pointer-events-none"></div>
       
       <div className="relative z-10 flex flex-col md:flex-row min-h-screen w-full">
-        <Sidebar currentView={currentView} onNavigate={setCurrentView} />
+        <Sidebar currentView={currentView} onNavigate={handleNavigate} currentUser={currentUser} />
         
         <main className="flex-1 flex flex-col w-full md:pl-72 h-screen bg-surface/60 backdrop-blur-md">
           <TopBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
           
           <div className="flex-1 overflow-y-auto">
-            {currentView === 'dashboard' && <DashboardView />}
-            {currentView === 'products' && <ProductsView onNavigate={setCurrentView} cart={cart} setCart={setCart} searchQuery={searchQuery} setSearchQuery={setSearchQuery} products={products} setProducts={setProducts} />}
+            {currentView === 'dashboard' && <DashboardView products={products} employees={employees} transactions={transactions} />}
+            {currentView === 'products' && <ProductsView onNavigate={handleNavigate} cart={cart} setCart={setCart} searchQuery={searchQuery} setSearchQuery={setSearchQuery} products={products} setProducts={setProducts} showToast={showToast} />}
             {currentView === 'employees' && <EmployeesView employees={employees} setEmployees={setEmployees} />}
             {currentView === 'services' && <ServicesView />}
             {currentView === 'location' && <LocationView />}
             {currentView === 'about' && <AboutView />}
-            {currentView === 'reports' && <ReportsView onNavigate={setCurrentView} transactions={transactions} setSelectedTransaction={setSelectedTransaction} />}
+            {currentView === 'reports' && <ReportsView onNavigate={handleNavigate} transactions={transactions} setSelectedTransaction={setSelectedTransaction} />}
             <Footer />
           </div>
           
@@ -122,8 +140,21 @@ export default function App() {
           <div className="h-16 md:h-0 shrink-0" />
         </main>
 
-        <BottomNav currentView={currentView} onNavigate={setCurrentView} />
+        <BottomNav currentView={currentView} onNavigate={handleNavigate} />
       </div>
+
+      {toast && (
+        <div className={`fixed bottom-4 right-4 z-[100] flex items-center gap-2 px-4 py-3 rounded shadow-lg animate-in fade-in slide-in-from-bottom-4 ${
+          toast.type === 'success' ? 'bg-primary text-on-primary' : 
+          toast.type === 'error' ? 'bg-error text-on-error' : 
+          'bg-surface-variant text-on-surface-variant'
+        }`}>
+          {toast.type === 'success' && <CheckCircle2 className="w-5 h-5" />}
+          {toast.type === 'error' && <XCircle className="w-5 h-5" />}
+          {toast.type === 'info' && <Info className="w-5 h-5" />}
+          <span className="text-sm font-medium">{toast.message}</span>
+        </div>
+      )}
     </div>
   );
 }

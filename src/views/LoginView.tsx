@@ -3,7 +3,7 @@ import { ViewType, User } from '../types';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
 import pharmacyBackground from '../assets/images/pharmacy_background_1782358561112.jpg';
 
-export function LoginView({ onNavigate, users }: { onNavigate: (view: ViewType) => void, users: User[] }) {
+export function LoginView({ onNavigate, users, setCurrentUser }: { onNavigate: (view: ViewType) => void, users: User[], setCurrentUser: (user: User) => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -12,6 +12,7 @@ export function LoginView({ onNavigate, users }: { onNavigate: (view: ViewType) 
     e.preventDefault();
     const user = users.find(u => u.email === email && u.password === password);
     if (user) {
+      setCurrentUser(user);
       onNavigate('products'); // Default view after login
     } else {
       alert('Email atau password salah');

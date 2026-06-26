@@ -1,15 +1,19 @@
 import React, { useState } from 'react';
-import { ViewType, Cart, Transaction } from '../types';
-import { products } from '../data';
+import { ViewType, Cart, Transaction, Product } from '../types';
+import { products as initialProducts } from '../data';
 import { Printer, Check, Tag } from 'lucide-react';
 import pharmacyBackground from '../assets/images/pharmacy_background_1782358561112.jpg';
 
-export function ReceiptView({ onNavigate, cart, setTransactions, setCart, selectedTransaction }: { 
+export function ReceiptView({ onNavigate, cart, setTransactions, setCart, selectedTransaction, currentUser, products = initialProducts, setProducts, showToast }: { 
   onNavigate: (view: ViewType) => void, 
   cart: Cart, 
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>, 
   setCart: React.Dispatch<React.SetStateAction<Cart>>,
-  selectedTransaction?: Transaction | null
+  selectedTransaction?: Transaction | null,
+  currentUser?: any,
+  products?: Product[],
+  setProducts?: React.Dispatch<React.SetStateAction<Product[]>>,
+  showToast?: (message: string, type?: 'success'|'error'|'info') => void
 }) {
   const [selectedDiscount, setSelectedDiscount] = useState<number>(0);
   const [customerName, setCustomerName] = useState<string>(selectedTransaction ? selectedTransaction.customer : '');
@@ -18,6 +22,28 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
   
   const isViewing = !!selectedTransaction;
 
+  const getDisplayName = (email: string) => {
+    if (!email) return 'Kasir Utama';
+    return email.split('@')[0];
+  };
+
+  const cashierName = currentUser?.email ? getDisplayName(currentUser.email) : 'Kasir Utama';
+
+  const cartItems = isViewing 
+    ? (selectedTransaction?.itemsDetails || []).map((item, index) => ({ id: index.toString(), name: item.name, quantity: item.quantity, price: item.price }))
+    : Object.entries(cart).map(([id, quantity]) => {
+        const product = products.find(p => p.id === id);
+        return product ? { ...product, quantity } : undefined;
+      }).filter(item => item !== undefined);
+
+  const subtotal = cartItems.reduce((sum, item) => sum + (item!.price * item!.quantity), 0);
+  // Original selectedDiscount calculation used selectedDiscount/100 or as raw? The buttons pass values like 10, 20.
+  // We should keep the original logic for discountAmount
+  const discountAmount = subtotal * (selectedDiscount / 100);
+  const afterDiscount = subtotal - discountAmount;
+  const tax = afterDiscount * 0.11;
+  const total = afterDiscount + tax;
+
   const onComplete = () => {
     if (!isViewing) {
       const newTransaction: Transaction = {
@@ -25,39 +51,43 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
         date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
         time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
         customer: customerName || 'Umum',
-        cashier: 'Kasir Utama',
+        cashier: cashierName,
         total: Math.round(total),
         status: 'Selesai',
         items: cartItems.reduce((sum, item) => sum + item!.quantity, 0),
         itemsDetails: cartItems.map(item => ({ name: item!.name, quantity: item!.quantity, price: item!.price }))
       };
       setTransactions(prev => [...prev, newTransaction]);
+      
+      if (setProducts) {
+        setProducts(prevProducts => prevProducts.map(p => {
+          const cartItem = cart[p.id];
+          if (cartItem) {
+            return { ...p, stock: Math.max(0, p.stock - cartItem) };
+          }
+          return p;
+        }));
+      }
+
       setCart({});
+      if (showToast) showToast('Transaksi berhasil diselesaikan', 'success');
     }
     onNavigate('products');
   };
 
-  const cartItems = isViewing 
-    ? (selectedTransaction?.itemsDetails || []).map((item, index) => ({ id: index.toString(), name: item.name, quantity: item.quantity, price: item.price }))
-    : Object.entries(cart).map(([id, quantity]) => {
-        const product = products.find(p => p.id === id);
-        return { ...product, quantity };
-      }).filter(item => item !== undefined);
-
-  const subtotal = cartItems.reduce((sum, item) => sum + (item!.price * item!.quantity), 0);
-  const discountAmount = subtotal * (selectedDiscount / 100);
-  const afterDiscount = subtotal - discountAmount;
-  const tax = afterDiscount * 0.11;
-  const total = afterDiscount + tax;
+  const handlePrint = () => {
+    window.print();
+    if (showToast) showToast('Mencetak struk termal...', 'info');
+  };
 
   return (
     <div 
-      className="bg-background text-on-background min-h-screen flex flex-col items-center py-12 px-4 font-sans antialiased bg-cover bg-center bg-fixed relative"
+      className="bg-background text-on-background min-h-screen flex flex-col items-center py-12 px-4 font-sans antialiased bg-cover bg-center bg-fixed relative print:bg-none print:bg-white print:p-0 print:min-h-0 print:block"
       style={{ backgroundImage: `url(${pharmacyBackground})` }}
     >
-      <div className="absolute inset-0 bg-background/80 z-0 pointer-events-none"></div>
+      <div className="absolute inset-0 bg-background/80 z-0 pointer-events-none print:hidden"></div>
 
-      <main className="w-full max-w-xl bg-surface border border-outline-variant shadow-none flex flex-col relative z-10">
+      <main className="w-full max-w-xl bg-surface border border-outline-variant shadow-none flex flex-col relative z-10 print:border-none print:shadow-none print:w-full print:max-w-none print:block">
         <div className="p-10 pb-6 flex flex-col items-center text-center border-b border-outline-variant">
           <h1 className="font-headline text-3xl italic tracking-tight text-on-surface mb-2">Apotek Natura.</h1>
           <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px]">Cabang Utama - Makassar / EST. 2024</p>
@@ -79,19 +109,11 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
           </div>
           <div>
             <span className="font-bold text-on-surface-variant block mb-1">Kasir</span>
-            <span className="text-on-surface">{isViewing ? selectedTransaction?.cashier : 'Budi Santoso'}</span>
+            <span className="text-on-surface">{isViewing ? selectedTransaction?.cashier : cashierName}</span>
           </div>
           <div className="text-right">
-            <label htmlFor="customer-name" className="font-bold text-on-surface-variant block mb-1">Pelanggan</label>
-            <input 
-              id="customer-name"
-              type="text" 
-              value={customerName}
-              disabled={isViewing}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="bg-transparent text-on-surface text-right w-full outline-none border-b border-dashed border-outline-variant focus:border-primary focus:border-solid placeholder:text-on-surface-variant/40"
-              placeholder="Nama pelanggan..."
-            />
+            <span className="font-bold text-on-surface-variant block mb-1">Pelanggan</span>
+            <span className="text-on-surface">{customerName || 'Umum'}</span>
           </div>
         </div>
 
@@ -116,7 +138,19 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
 
         {!isViewing && (
           <>
-            <div className="px-10 py-8 flex flex-col gap-4 border-b border-outline-variant">
+            <div className="px-10 py-8 flex flex-col gap-4 border-b border-outline-variant print:hidden">
+              <label htmlFor="customer-input" className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px]">Nama Pelanggan (Opsional)</label>
+              <input 
+                id="customer-input"
+                type="text" 
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full py-3 bg-transparent border-b border-outline-variant text-sm text-on-surface focus:outline-none focus:border-primary placeholder:text-on-surface-variant/40 transition-colors rounded-none"
+                placeholder="Masukkan nama pelanggan..."
+              />
+            </div>
+
+            <div className="px-10 py-8 flex flex-col gap-4 border-b border-outline-variant print:hidden">
               <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px]">Pilih Metode Pembayaran</span>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button 
@@ -140,7 +174,7 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
               </div>
             </div>
 
-            <div className="px-10 py-8 flex flex-col gap-4 border-b border-outline-variant">
+            <div className="px-10 py-8 flex flex-col gap-4 border-b border-outline-variant print:hidden">
               <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px]">Pilih Diskon</span>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <button 
@@ -182,7 +216,7 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
           </>
         )}
 
-        <div className="px-10 py-8 flex flex-col gap-3 border-b border-outline-variant bg-surface-variant/20">
+        <div className="px-10 py-8 flex flex-col gap-3 border-b border-outline-variant bg-surface-variant/20 print:bg-transparent print:border-none">
           <div className="flex justify-between items-center text-[11px] uppercase tracking-[1px]">
             <span className="text-on-surface-variant font-bold">Subtotal</span>
             <span className="font-mono text-on-surface">Rp {subtotal.toLocaleString('id-ID')}</span>
@@ -198,7 +232,7 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
             <span className="font-mono text-on-surface">Rp {tax.toLocaleString('id-ID', { maximumFractionDigits: 0 })}</span>
           </div>
           
-          <div className="mt-4 pt-4 border-t border-outline-variant flex justify-between items-end">
+          <div className="mt-4 pt-4 border-t border-outline-variant flex justify-between items-end print:border-black">
             <div>
               <span className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px] mb-1">Total Bayar</span>
               <span className="text-[10px] text-on-surface-variant uppercase tracking-[1px]">Via {paymentMethod} • Anda Mendapatkan {Math.floor(total / 10000)} Poin</span>
@@ -212,12 +246,12 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
         </div>
       </main>
 
-      <div className="w-full max-w-xl mt-8 flex flex-col sm:flex-row gap-4 px-4 md:px-0">
+      <div className="w-full max-w-xl mt-8 flex flex-col sm:flex-row gap-4 px-4 md:px-0 print:hidden">
         <button onClick={onComplete} className="flex-1 py-5 px-8 bg-primary text-on-primary text-[11px] uppercase tracking-[2px] font-bold shadow-lg hover:bg-primary-container hover:shadow-xl rounded-xl transition-all duration-300 flex items-center justify-center gap-2 hover:-translate-y-0.5">
           <Check className="w-4 h-4" />
           Selesai & Kembali
         </button>
-        <button onClick={() => window.print()} className="flex-1 py-5 px-8 bg-secondary text-on-secondary text-[11px] uppercase tracking-[2px] font-bold shadow-lg hover:bg-secondary-container hover:shadow-xl rounded-xl transition-all duration-300 flex items-center justify-center gap-2 hover:-translate-y-0.5">
+        <button onClick={handlePrint} className="flex-1 py-5 px-8 bg-secondary text-on-secondary text-[11px] uppercase tracking-[2px] font-bold shadow-lg hover:bg-secondary-container hover:shadow-xl rounded-xl transition-all duration-300 flex items-center justify-center gap-2 hover:-translate-y-0.5">
           <Printer className="w-4 h-4" />
           Cetak/Simpan PDF
         </button>

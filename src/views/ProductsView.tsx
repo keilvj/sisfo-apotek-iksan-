@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Search, Filter, Plus, ShoppingBag, Minus } from 'lucide-react';
+import { Search, Filter, Plus, ShoppingBag, Minus, Edit, Trash2 } from 'lucide-react';
 import { ViewType, Cart, Product } from '../types';
 
-export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearchQuery, products, setProducts }: { onNavigate?: (view: ViewType) => void, cart: Cart, setCart: React.Dispatch<React.SetStateAction<Cart>>, searchQuery: string, setSearchQuery: (query: string) => void, products: Product[], setProducts: React.Dispatch<React.SetStateAction<Product[]>> }) {
+export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearchQuery, products, setProducts, showToast }: { onNavigate?: (view: ViewType) => void, cart: Cart, setCart: React.Dispatch<React.SetStateAction<Cart>>, searchQuery: string, setSearchQuery: (query: string) => void, products: Product[], setProducts: React.Dispatch<React.SetStateAction<Product[]>>, showToast?: (message: string, type?: 'success'|'error'|'info') => void }) {
 
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newProduct, setNewProduct] = useState<Omit<Product, 'id' | 'status'>>({
     name: '',
     category: '',
@@ -20,14 +21,49 @@ export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearch
 
   const handleAddProduct = () => {
     const status = newProduct.stock === 0 ? 'Kosong' : newProduct.stock < 20 ? 'Menipis' : 'Tersedia';
-    const product: Product = {
-      id: `p${Date.now()}`,
-      ...newProduct,
-      status
-    };
-    setProducts([...products, product]);
+    
+    if (editingProduct) {
+      setProducts(products.map(p => p.id === editingProduct.id ? { ...editingProduct, ...newProduct, status } : p));
+      setEditingProduct(null);
+      if (showToast) showToast('Produk berhasil diperbarui', 'success');
+    } else {
+      const product: Product = {
+        id: `p${Date.now()}`,
+        ...newProduct,
+        status
+      };
+      setProducts([...products, product]);
+      if (showToast) showToast('Produk berhasil ditambahkan', 'success');
+    }
     setShowAddModal(false);
     setNewProduct({ name: '', category: '', stock: 0, expiryDate: '', originalPrice: 0, price: 0, image: 'https://via.placeholder.com/150' });
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setNewProduct({
+      name: product.name,
+      category: product.category,
+      stock: product.stock,
+      expiryDate: product.expiryDate,
+      originalPrice: product.originalPrice,
+      price: product.price,
+      image: product.image
+    });
+    setShowAddModal(true);
+  };
+
+  const handleDeleteProduct = (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus produk ini?')) {
+      setProducts(products.filter(p => p.id !== id));
+      // Remove from cart if exists
+      setCart(prev => {
+        const newCart = { ...prev };
+        delete newCart[id];
+        return newCart;
+      });
+      if (showToast) showToast('Produk dihapus', 'info');
+    }
   };
 
   const filteredProducts = products.filter(p => 
@@ -37,11 +73,16 @@ export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearch
     (selectedCategory === 'Semua' || p.category === selectedCategory)
   );
 
-  const handleAddToCart = (productId: string) => {
+  const handleAddToCart = (product: Product) => {
+    if (product.stock <= (cart[product.id] || 0)) {
+      if (showToast) showToast('Stok tidak mencukupi', 'error');
+      return;
+    }
     setCart(prev => ({
       ...prev,
-      [productId]: (prev[productId] || 0) + 1
+      [product.id]: (prev[product.id] || 0) + 1
     }));
+    if (showToast) showToast(`${product.name} ditambahkan ke troli`, 'success');
   };
 
   const handleRemoveFromCart = (productId: string) => {
@@ -76,8 +117,8 @@ export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearch
 
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-surface p-8 rounded-lg shadow-xl w-full max-w-md">
-            <h3 className="font-headline text-xl mb-4">Tambah Produk Baru</h3>
+          <div className="bg-surface p-8 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h3 className="font-headline text-xl mb-4">{editingProduct ? 'Edit Produk' : 'Tambah Produk Baru'}</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-on-surface mb-1">Nama Produk</label>
@@ -121,8 +162,8 @@ export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearch
               />
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 text-on-surface">Tutup</button>
-              <button onClick={handleAddProduct} className="bg-primary text-on-primary px-4 py-2 rounded">Tambah</button>
+              <button onClick={() => { setShowAddModal(false); setEditingProduct(null); setNewProduct({ name: '', category: '', stock: 0, expiryDate: '', originalPrice: 0, price: 0, image: 'https://via.placeholder.com/150' }); }} className="px-4 py-2 text-on-surface">Batal</button>
+              <button onClick={handleAddProduct} className="bg-primary text-on-primary px-4 py-2 rounded">{editingProduct ? 'Simpan' : 'Tambah'}</button>
             </div>
           </div>
         </div>
@@ -185,6 +226,14 @@ export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearch
                     <span className="text-on-surface-variant text-[9px] uppercase tracking-[2px] font-bold block mb-2">{product.category}</span>
                     <h3 className="font-headline text-lg font-normal text-on-surface leading-snug line-clamp-2">{product.name}</h3>
                   </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => handleEditProduct(product)} className="text-primary hover:bg-surface-variant p-1 rounded-full transition-colors" aria-label="Edit">
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleDeleteProduct(product.id)} className="text-error hover:bg-error-container p-1 rounded-full transition-colors" aria-label="Hapus">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="mt-auto flex flex-col gap-4">
@@ -208,7 +257,7 @@ export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearch
                       <button onClick={() => handleRemoveFromCart(product.id)} className="p-1 hover:bg-surface-variant transition-colors"><Minus className="w-3 h-3" /></button>
                       <span className="text-[11px] font-mono">{cart[product.id]}</span>
                       <button 
-                        onClick={() => handleAddToCart(product.id)} 
+                        onClick={() => handleAddToCart(product)} 
                         disabled={cart[product.id] >= product.stock}
                         className="p-1 hover:bg-surface-variant transition-colors disabled:opacity-50"
                       >
@@ -217,7 +266,7 @@ export function ProductsView({ onNavigate, cart, setCart, searchQuery, setSearch
                     </div>
                   ) : (
                     <button 
-                      onClick={() => handleAddToCart(product.id)}
+                      onClick={() => handleAddToCart(product)}
                       disabled={product.status === 'Kosong'}
                       className="w-full bg-transparent border border-outline-variant text-on-surface text-[10px] uppercase tracking-[2px] font-bold py-3 hover:bg-primary hover:text-on-primary hover:border-primary transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >

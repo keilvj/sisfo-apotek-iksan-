@@ -5,9 +5,10 @@ import { ViewType } from '../types';
 interface SidebarProps {
   currentView: ViewType;
   onNavigate: (view: ViewType) => void;
+  currentUser?: any;
 }
 
-export function Sidebar({ currentView, onNavigate }: SidebarProps) {
+export function Sidebar({ currentView, onNavigate, currentUser }: SidebarProps) {
   const navItems = [
     { id: 'dashboard' as ViewType, label: 'Dashboard', icon: LayoutDashboard },
     { id: 'employees' as ViewType, label: 'Karyawan', icon: Users },
@@ -19,13 +20,18 @@ export function Sidebar({ currentView, onNavigate }: SidebarProps) {
     { id: 'login' as ViewType, label: 'Keluar', icon: LogOut }, // Map to login for demo
   ];
 
+  const getDisplayName = (email: string) => {
+    if (!email) return 'Guest';
+    return email.split('@')[0];
+  };
+
   return (
     <aside className="hidden md:flex flex-col bg-surface h-full w-72 fixed inset-y-0 left-0 z-50 border-r border-outline-variant">
       <div className="p-8 flex flex-col gap-6 border-b border-outline-variant">
         <div className="flex items-center gap-4">
           <div>
             <h2 className="font-headline text-2xl italic tracking-tight text-on-surface leading-tight mb-1">Natura.</h2>
-            <p className="text-[10px] uppercase tracking-[2px] text-on-surface-variant">Arsip 012</p>
+            <p className="text-[10px] uppercase tracking-[2px] text-on-surface-variant">Selamat Datang, {getDisplayName(currentUser?.email)}</p>
           </div>
         </div>
       </div>

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Filter, Plus, ArrowUp, Clock, Phone, Mail, MoreVertical, MapPin, Box, Search, X } from 'lucide-react';
+import { Filter, Plus, ArrowUp, Clock, Phone, Mail, MoreVertical, MapPin, Box, Search, X, Edit, Trash2 } from 'lucide-react';
 import { Employee } from '../types';
 
 export function EmployeesView({ employees, setEmployees }: { employees: Employee[], setEmployees: React.Dispatch<React.SetStateAction<Employee[]>> }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRole, setSelectedRole] = useState('Semua');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [newEmployee, setNewEmployee] = useState<Omit<Employee, 'id'>>({
     name: '',
     role: '',
@@ -13,19 +15,64 @@ export function EmployeesView({ employees, setEmployees }: { employees: Employee
     avatar: 'https://via.placeholder.com/150'
   });
   
-  const handleAddEmployee = () => {
-    const employee: Employee = {
-      id: `e${Date.now()}`,
-      ...newEmployee,
+  const roles = ['Semua', ...Array.from(new Set(employees.map(e => e.role)))];
+  
+  const [currentShift, setCurrentShift] = useState({ name: 'Shift Pagi', time: '08:00 - 16:00' });
+
+  React.useEffect(() => {
+    const updateShift = () => {
+      const hour = new Date().getHours();
+      if (hour >= 8 && hour < 16) {
+        setCurrentShift({ name: 'Shift Pagi', time: '08:00 - 16:00' });
+      } else if (hour >= 16 && hour < 24) {
+        setCurrentShift({ name: 'Shift Sore', time: '16:00 - 00:00' });
+      } else {
+        setCurrentShift({ name: 'Shift Malam', time: '00:00 - 08:00' });
+      }
     };
-    setEmployees([...employees, employee]);
+
+    updateShift();
+    const interval = setInterval(updateShift, 60000); // Perbarui setiap menit
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleAddEmployee = () => {
+    if (editingEmployee) {
+      setEmployees(employees.map(emp => emp.id === editingEmployee.id ? { ...editingEmployee, ...newEmployee } : emp));
+      setEditingEmployee(null);
+    } else {
+      const employee: Employee = {
+        id: `e${Date.now()}`,
+        ...newEmployee,
+      };
+      setEmployees([...employees, employee]);
+    }
     setShowAddModal(false);
     setNewEmployee({ name: '', role: '', location: '', shift: '', avatar: 'https://via.placeholder.com/150' });
   };
 
+  const handleEdit = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setNewEmployee({
+      name: employee.name,
+      role: employee.role,
+      location: employee.location,
+      shift: employee.shift,
+      avatar: employee.avatar
+    });
+    setShowAddModal(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus karyawan ini?')) {
+      setEmployees(employees.filter(emp => emp.id !== id));
+    }
+  };
+
   const filteredEmployees = employees.filter(e => 
-    e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    e.role.toLowerCase().includes(searchQuery.toLowerCase())
+    (e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.role.toLowerCase().includes(searchQuery.toLowerCase())) &&
+    (selectedRole === 'Semua' || e.role === selectedRole)
   );
 
   return (
@@ -35,7 +82,7 @@ export function EmployeesView({ employees, setEmployees }: { employees: Employee
           <h2 className="font-headline text-2xl md:text-3xl font-bold text-on-surface m-0 p-0">Karyawan</h2>
           <p className="text-sm text-on-surface-variant mt-1">Kelola data staf dan apoteker.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center border border-outline-variant rounded-lg px-3 py-2 bg-surface">
             <Search className="w-4 h-4 text-on-surface-variant mr-2" />
             <input 
@@ -45,6 +92,18 @@ export function EmployeesView({ employees, setEmployees }: { employees: Employee
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+          <div className="relative flex items-center border border-outline-variant rounded-lg px-3 py-2 bg-surface">
+            <Filter className="w-4 h-4 text-on-surface-variant mr-2" />
+            <select
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="bg-transparent text-xs outline-none appearance-none pr-4 cursor-pointer text-on-surface"
+            >
+              {roles.map(role => (
+                <option key={role} value={role}>{role}</option>
+              ))}
+            </select>
           </div>
           <button 
             onClick={() => setShowAddModal(true)}
@@ -60,8 +119,8 @@ export function EmployeesView({ employees, setEmployees }: { employees: Employee
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-surface p-8 rounded-lg shadow-xl w-full max-w-md">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-headline text-xl">Tambah Staf Baru</h3>
-              <button onClick={() => setShowAddModal(false)}><X className="w-5 h-5"/></button>
+              <h3 className="font-headline text-xl">{editingEmployee ? 'Edit Staf' : 'Tambah Staf Baru'}</h3>
+              <button onClick={() => { setShowAddModal(false); setEditingEmployee(null); setNewEmployee({ name: '', role: '', location: '', shift: '', avatar: 'https://via.placeholder.com/150' }); }}><X className="w-5 h-5"/></button>
             </div>
             <div className="space-y-4">
               <input type="text" placeholder="Nama Lengkap" className="w-full p-2 border border-outline-variant rounded" value={newEmployee.name} onChange={e => setNewEmployee({...newEmployee, name: e.target.value})} />
@@ -86,8 +145,8 @@ export function EmployeesView({ employees, setEmployees }: { employees: Employee
               />
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowAddModal(false)} className="px-4 py-2 text-on-surface">Tutup</button>
-              <button onClick={handleAddEmployee} className="bg-primary text-on-primary px-4 py-2 rounded">Tambah</button>
+              <button onClick={() => { setShowAddModal(false); setEditingEmployee(null); setNewEmployee({ name: '', role: '', location: '', shift: '', avatar: 'https://via.placeholder.com/150' }); }} className="px-4 py-2 text-on-surface">Batal</button>
+              <button onClick={handleAddEmployee} className="bg-primary text-on-primary px-4 py-2 rounded">{editingEmployee ? 'Simpan' : 'Tambah'}</button>
             </div>
           </div>
         </div>
@@ -110,8 +169,8 @@ export function EmployeesView({ employees, setEmployees }: { employees: Employee
           <span className="text-xs font-semibold uppercase tracking-wider opacity-80 relative z-10">Shift Saat Ini</span>
           <div className="flex items-center justify-between mt-1 relative z-10">
             <div>
-              <span className="font-headline text-xl font-bold">Shift Pagi</span>
-              <p className="font-mono text-sm opacity-90">08:00 - 16:00</p>
+              <span className="font-headline text-xl font-bold">{currentShift.name}</span>
+              <p className="font-mono text-sm opacity-90">{currentShift.time}</p>
             </div>
             <Clock className="w-10 h-10 opacity-20" />
           </div>
@@ -155,11 +214,11 @@ export function EmployeesView({ employees, setEmployees }: { employees: Employee
                 <button aria-label="Email" className="w-10 h-10 rounded-full bg-surface border border-outline-variant flex items-center justify-center text-primary hover:bg-surface-variant hover:border-primary transition-all">
                   <Mail className="w-5 h-5" />
                 </button>
-                <button aria-label="More" className="w-10 h-10 rounded-full bg-surface border border-outline-variant flex items-center justify-center text-on-surface-variant hover:bg-surface-variant transition-all md:hidden">
-                  <MoreVertical className="w-5 h-5" />
+                <button onClick={() => handleEdit(employee)} aria-label="Edit" className="w-10 h-10 rounded-full bg-surface border border-outline-variant flex items-center justify-center text-primary hover:bg-surface-variant hover:border-primary transition-all">
+                  <Edit className="w-5 h-5" />
                 </button>
-                <button className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-outline-variant text-on-surface-variant hover:bg-surface-variant transition-colors text-xs font-semibold">
-                  Detail
+                <button onClick={() => handleDelete(employee.id)} aria-label="Hapus" className="w-10 h-10 rounded-full bg-surface border border-outline-variant flex items-center justify-center text-error hover:bg-error-container hover:border-error transition-all">
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </div>
             </div>

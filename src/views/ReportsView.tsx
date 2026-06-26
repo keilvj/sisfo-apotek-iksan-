@@ -47,15 +47,32 @@ export function ReportsView({ onNavigate, transactions, setSelectedTransaction }
         </div>
         
         <div className="flex gap-4 w-full md:w-auto">
-          <button 
-            onClick={() => setFilterType(filterType === 'thisMonth' ? 'all' : 'thisMonth')}
-            className={`flex-1 md:flex-none border border-outline-variant ${filterType === 'thisMonth' ? 'bg-primary text-on-primary' : 'bg-surface text-on-surface'} py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-surface-variant hover:border-on-surface transition-all flex items-center justify-center gap-2`}>
+          <button onClick={() => setFilterType(filterType === 'thisMonth' ? 'all' : 'thisMonth')} className={`flex-1 md:flex-none border border-outline-variant ${filterType === 'thisMonth' ? 'bg-primary text-on-primary' : 'bg-surface text-on-surface'} py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-surface-variant hover:border-on-surface transition-all flex items-center justify-center gap-2`}>
             <Calendar className="w-4 h-4" />
             Bulan Ini
           </button>
-          <button className="flex-1 md:flex-none bg-primary text-on-primary py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-on-surface-variant transition-all flex items-center justify-center gap-2">
+          <button 
+            onClick={() => {
+              const headers = ['ID', 'Tanggal', 'Waktu', 'Pelanggan', 'Kasir', 'Total', 'Status', 'Jumlah Item'];
+              const csvContent = [
+                headers.join(','),
+                ...filteredTransactions.map(t => 
+                  [t.id, t.date, t.time, t.customer, t.cashier, t.total, t.status, t.items].join(',')
+                )
+              ].join('\n');
+              
+              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+              const link = document.createElement('a');
+              link.href = URL.createObjectURL(blob);
+              link.setAttribute('download', `laporan_transaksi_${new Date().toISOString().split('T')[0]}.csv`);
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            }}
+            className="flex-1 md:flex-none bg-primary text-on-primary py-3 px-6 text-[10px] uppercase tracking-[2px] font-bold hover:bg-on-surface-variant transition-all flex items-center justify-center gap-2"
+          >
             <Download className="w-4 h-4" />
-            Unduh PDF
+            Unduh CSV
           </button>
         </div>
       </div>

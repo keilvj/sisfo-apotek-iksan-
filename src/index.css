@@ -96,7 +96,42 @@
   }
 }
 
-/* Custom scrollbar for webkit */
+@media print {
+  @page {
+    margin: 0;
+    size: 58mm auto; /* 58mm thermal paper standard */
+  }
+
+  body {
+    width: 58mm;
+    margin: 0;
+    padding: 0;
+    background: white !important;
+    color: black !important;
+    font-size: 10px; /* Base font size for thermal */
+  }
+
+  * {
+    color: black !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Force print styles specifically for thermal */
+  .print\:block {
+    display: block !important;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:w-full {
+    width: 100% !important;
+  }
+}
+
 ::-webkit-scrollbar {
   width: 4px;
   height: 4px;
