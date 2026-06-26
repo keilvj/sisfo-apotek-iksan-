@@ -98,17 +98,15 @@
 
 @media print {
   @page {
-    margin: 0;
-    size: 58mm auto; /* 58mm thermal paper standard */
+    margin: 1cm;
   }
 
   body {
-    width: 58mm;
+    width: 100%;
     margin: 0;
     padding: 0;
     background: white !important;
     color: black !important;
-    font-size: 10px; /* Base font size for thermal */
   }
 
   * {
@@ -118,7 +116,6 @@
     text-shadow: none !important;
   }
 
-  /* Force print styles specifically for thermal */
   .print\:block {
     display: block !important;
   }

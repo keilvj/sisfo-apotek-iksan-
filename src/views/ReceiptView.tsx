@@ -88,12 +88,12 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
       <div className="absolute inset-0 bg-background/80 z-0 pointer-events-none print:hidden"></div>
 
       <main className="w-full max-w-xl bg-surface border border-outline-variant shadow-none flex flex-col relative z-10 print:border-none print:shadow-none print:w-full print:max-w-none print:block">
-        <div className="p-10 pb-6 print:p-4 print:pb-3 flex flex-col items-center text-center border-b border-outline-variant print:border-black">
-          <h1 className="font-headline text-3xl print:text-xl italic tracking-tight text-on-surface mb-2">Apotek Natura.</h1>
-          <p className="text-[10px] print:text-[8px] font-bold text-on-surface-variant uppercase tracking-[2px]">Cabang Utama - Makassar / EST. 2024</p>
+        <div className="p-10 pb-6 flex flex-col items-center text-center border-b border-outline-variant print:border-black">
+          <h1 className="font-headline text-3xl italic tracking-tight text-on-surface mb-2">Apotek Natura.</h1>
+          <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px]">Cabang Utama - Makassar / EST. 2024</p>
         </div>
         
-        <div className="px-10 py-6 print:px-4 print:py-4 flex flex-col gap-4 print:gap-2 border-b border-outline-variant print:border-black text-[10px] print:text-[8px] uppercase tracking-[1px]">
+        <div className="px-10 py-6 flex flex-col gap-4 border-b border-outline-variant print:border-black text-[10px] uppercase tracking-[1px]">
           <div className="flex justify-between w-full">
             <span className="font-bold text-on-surface-variant">No. Rekam / Struk</span>
             <span className="font-mono text-on-surface text-right">{isViewing ? selectedTransaction?.id : 'TRX-20231027-084'}</span>
@@ -117,20 +117,20 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
           </div>
         </div>
 
-        <div className="px-10 py-8 print:px-4 print:py-4 flex flex-col gap-6 print:gap-3 border-b border-outline-variant print:border-black">
-          <div className="text-[10px] print:text-[8px] font-bold text-on-surface-variant uppercase tracking-[2px] border-b border-outline-variant print:border-black pb-2 flex justify-between">
+        <div className="px-10 py-8 flex flex-col gap-6 border-b border-outline-variant print:border-black">
+          <div className="text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px] border-b border-outline-variant print:border-black pb-2 flex justify-between">
             <span>Rincian Produk</span>
             <span>Total</span>
           </div>
 
-          <div className="flex flex-col gap-2 print:gap-1">
+          <div className="flex flex-col gap-2">
             {cartItems.map(item => (
               <div key={item!.id} className="flex justify-between items-start">
                 <div className="flex flex-col max-w-[65%]">
-                  <span className="text-sm print:text-[10px] text-on-surface font-normal leading-tight mb-1">{item!.name}</span>
-                  <span className="font-mono text-[11px] print:text-[8px] text-on-surface-variant">{item!.quantity} x Rp {item!.price.toLocaleString('id-ID')}</span>
+                  <span className="text-sm text-on-surface font-normal leading-tight mb-1">{item!.name}</span>
+                  <span className="font-mono text-[11px] text-on-surface-variant">{item!.quantity} x Rp {item!.price.toLocaleString('id-ID')}</span>
                 </div>
-                <span className="font-mono text-sm print:text-[10px] text-on-surface">Rp {(item!.price * item!.quantity).toLocaleString('id-ID')}</span>
+                <span className="font-mono text-sm text-on-surface">Rp {(item!.price * item!.quantity).toLocaleString('id-ID')}</span>
               </div>
             ))}
           </div>
@@ -216,33 +216,33 @@ export function ReceiptView({ onNavigate, cart, setTransactions, setCart, select
           </>
         )}
 
-        <div className="px-10 py-8 print:px-4 print:py-4 flex flex-col gap-3 print:gap-1 border-b border-outline-variant print:border-black bg-surface-variant/20 print:bg-transparent">
-          <div className="flex justify-between items-center text-[11px] print:text-[10px] uppercase tracking-[1px]">
+        <div className="px-10 py-8 flex flex-col gap-3 border-b border-outline-variant print:border-black bg-surface-variant/20 print:bg-transparent">
+          <div className="flex justify-between items-center text-[11px] uppercase tracking-[1px]">
             <span className="text-on-surface-variant font-bold">Subtotal</span>
             <span className="font-mono text-on-surface">Rp {subtotal.toLocaleString('id-ID')}</span>
           </div>
           {selectedDiscount > 0 && (
-            <div className="flex justify-between items-center text-[11px] print:text-[10px] uppercase tracking-[1px]">
+            <div className="flex justify-between items-center text-[11px] uppercase tracking-[1px]">
               <span className="text-primary print:text-black font-bold">Diskon ({selectedDiscount}%)</span>
               <span className="font-mono text-primary print:text-black">-Rp {discountAmount.toLocaleString('id-ID')}</span>
             </div>
           )}
-          <div className="flex justify-between items-center text-[11px] print:text-[10px] uppercase tracking-[1px]">
+          <div className="flex justify-between items-center text-[11px] uppercase tracking-[1px]">
             <span className="text-on-surface-variant font-bold">PPN (11%)</span>
             <span className="font-mono text-on-surface">Rp {tax.toLocaleString('id-ID', { maximumFractionDigits: 0 })}</span>
           </div>
           
-          <div className="mt-4 pt-4 border-t border-outline-variant flex justify-between items-end print:border-black print:mt-2 print:pt-2">
+          <div className="mt-4 pt-4 border-t border-outline-variant flex justify-between items-end print:border-black">
             <div>
-              <span className="block text-[10px] print:text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px] mb-1 print:mb-0">Total Bayar</span>
-              <span className="text-[10px] print:text-[8px] text-on-surface-variant uppercase tracking-[1px]">Via {paymentMethod} • Anda Mendapatkan {Math.floor(total / 10000)} Poin</span>
+              <span className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-[2px] mb-1">Total Bayar</span>
+              <span className="text-[10px] text-on-surface-variant uppercase tracking-[1px]">Via {paymentMethod} • Anda Mendapatkan {Math.floor(total / 10000)} Poin</span>
             </div>
-            <span className="font-headline text-3xl print:text-xl font-normal text-on-surface">Rp {total.toLocaleString('id-ID', { maximumFractionDigits: 0 })}</span>
+            <span className="font-headline text-3xl font-normal text-on-surface">Rp {total.toLocaleString('id-ID', { maximumFractionDigits: 0 })}</span>
           </div>
         </div>
         
-        <div className="px-10 py-6 print:px-4 print:py-4 text-center">
-          <p className="text-[10px] print:text-[8px] text-on-surface-variant uppercase tracking-[2px] italic">Terima kasih atas kunjungan Anda.</p>
+        <div className="px-10 py-6 text-center">
+          <p className="text-[10px] text-on-surface-variant uppercase tracking-[2px] italic">Terima kasih atas kunjungan Anda.</p>
         </div>
       </main>
 
